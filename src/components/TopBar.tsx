@@ -21,10 +21,8 @@ export default function TopBar() {
       <div className="flex items-center justify-between h-full px-4 max-w-5xl mx-auto gap-4">
 
         {/* Logo */}
-        <div className="flex items-center gap-2 shrink-0">
-          <div className="w-7 h-7 rounded-lg bg-primary flex items-center justify-center">
-            <Gamepad2 className="w-4 h-4 text-background" />
-          </div>
+        <div className="flex items-center gap-1 shrink-0">
+          <img src="/logo.png" alt="ArcadeForge" className="w-9 h-9 object-contain mix-blend-multiply" />
           <span className="font-display font-black text-sm tracking-tight text-foreground hidden sm:block">
             ArcadeForge
           </span>
