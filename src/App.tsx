@@ -3,7 +3,6 @@ import { BrowserRouter, Route, Routes } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import BottomNav from "@/components/BottomNav";
 import WalletProvider from "@/components/WalletProvider";
 import TopBar from "@/components/TopBar";
 import { ThemeProvider } from "@/contexts/ThemeContext";
@@ -26,7 +25,7 @@ const App = () => (
           <BrowserRouter>
             <div className="min-h-screen bg-background">
               <TopBar />
-              <div className="pt-28">
+              <div className="pt-14">
               <Routes>
                 <Route path="/" element={<Home />} />
                 <Route path="/build" element={<Build />} />
@@ -36,7 +35,6 @@ const App = () => (
                 <Route path="*" element={<NotFound />} />
               </Routes>
               </div>
-              <BottomNav />
             </div>
           </BrowserRouter>
         </TooltipProvider>
