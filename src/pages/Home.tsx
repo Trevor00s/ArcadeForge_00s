@@ -41,9 +41,8 @@ function OrbitalGraphic() {
     <div className="relative w-[300px] h-[300px] shrink-0">
       <div className="absolute inset-0 rounded-full border border-primary/20" />
       <div className="absolute inset-10 rounded-full border border-primary/15" />
-      <div className="absolute inset-[70px] rounded-full bg-primary/8" />
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[84px] h-[84px] rounded-full bg-primary flex items-center justify-center shadow-xl shadow-primary/30">
-        <Gamepad2 className="w-9 h-9 text-background" />
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[190px] h-[190px]">
+        <img src="/logo.png" alt="ArcadeForge" className="w-full h-full object-contain mix-blend-multiply dark:mix-blend-screen" />
       </div>
       {ORBIT_OUTER.map(({ emoji, style, delay }) => (
         <div
