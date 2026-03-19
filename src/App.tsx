@@ -5,6 +5,8 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import BottomNav from "@/components/BottomNav";
 import WalletProvider from "@/components/WalletProvider";
+import ThemeToggle from "@/components/ThemeToggle";
+import { ThemeProvider } from "@/contexts/ThemeContext";
 import Home from "./pages/Home";
 import Build from "./pages/Build";
 import Marketplace from "./pages/Marketplace";
@@ -15,27 +17,30 @@ import NotFound from "./pages/NotFound";
 const queryClient = new QueryClient();
 
 const App = () => (
-  <WalletProvider>
-    <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <Toaster />
-        <Sonner richColors position="bottom-right" />
-        <BrowserRouter>
-        <div className="min-h-screen bg-background">
-          <Routes>
-            <Route path="/" element={<Home />} />
-            <Route path="/build" element={<Build />} />
-            <Route path="/marketplace" element={<Marketplace />} />
-            <Route path="/library" element={<Library />} />
-            <Route path="/profile" element={<Profile />} />
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-          <BottomNav />
-        </div>
-        </BrowserRouter>
-      </TooltipProvider>
-    </QueryClientProvider>
-  </WalletProvider>
+  <ThemeProvider>
+    <WalletProvider>
+      <QueryClientProvider client={queryClient}>
+        <TooltipProvider>
+          <Toaster />
+          <Sonner richColors position="bottom-right" />
+          <BrowserRouter>
+            <div className="min-h-screen bg-background">
+              <ThemeToggle />
+              <Routes>
+                <Route path="/" element={<Home />} />
+                <Route path="/build" element={<Build />} />
+                <Route path="/marketplace" element={<Marketplace />} />
+                <Route path="/library" element={<Library />} />
+                <Route path="/profile" element={<Profile />} />
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+              <BottomNav />
+            </div>
+          </BrowserRouter>
+        </TooltipProvider>
+      </QueryClientProvider>
+    </WalletProvider>
+  </ThemeProvider>
 );
 
 export default App;
