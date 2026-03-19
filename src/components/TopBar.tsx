@@ -1,8 +1,10 @@
-import { Gamepad2, Wallet, Loader2, Sun, Moon, Home, Hammer, Store, BookOpen, User } from "lucide-react";
+import { Wallet, Loader2, Sun, Moon, Home, Hammer, Store, BookOpen, User, LogOut, Copy, Check } from "lucide-react";
 import { NavLink } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { useWallet } from "@/hooks/useWallet";
 import { useTheme } from "@/contexts/ThemeContext";
+import { useState, useRef, useEffect } from "react";
+import { toast } from "sonner";
 
 const NAV_ITEMS = [
   { to: "/", icon: Home, label: "Home" },
@@ -13,8 +15,27 @@ const NAV_ITEMS = [
 ];
 
 export default function TopBar() {
-  const { connected, connecting, shortAddress, connectPetra } = useWallet();
+  const { connected, connecting, shortAddress, address, connectPetra, disconnect } = useWallet();
   const { theme, toggle } = useTheme();
+  const [open, setOpen] = useState(false);
+  const [copied, setCopied] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
+
+  const copyAddress = async () => {
+    if (!address) return;
+    await navigator.clipboard.writeText(address);
+    setCopied(true);
+    toast.success("Address copied!");
+    setTimeout(() => setCopied(false), 2000);
+  };
 
   return (
     <header className="fixed top-0 left-0 right-0 z-50 h-14 bg-background/80 backdrop-blur-xl border-b border-border">
@@ -66,9 +87,32 @@ export default function TopBar() {
               Connecting…
             </button>
           ) : connected ? (
-            <div className="flex items-center gap-1.5 px-3 h-8 rounded-full bg-primary/10 border border-primary/20 text-primary text-xs font-medium">
-              <span className="w-1.5 h-1.5 rounded-full bg-primary" />
-              {shortAddress}
+            <div ref={ref} className="relative">
+              <button
+                onClick={() => setOpen(o => !o)}
+                className="flex items-center gap-1.5 px-3 h-8 rounded-full bg-primary/10 border border-primary/20 text-primary text-xs font-medium hover:bg-primary/20 transition-all"
+              >
+                <span className="w-1.5 h-1.5 rounded-full bg-primary" />
+                {shortAddress}
+              </button>
+              {open && (
+                <div className="absolute right-0 top-10 w-44 rounded-xl bg-card border border-border shadow-lg overflow-hidden z-50">
+                  <button
+                    onClick={copyAddress}
+                    className="w-full flex items-center gap-2 px-3 py-2.5 text-xs text-foreground hover:bg-secondary transition-colors"
+                  >
+                    {copied ? <Check className="w-3.5 h-3.5 text-primary" /> : <Copy className="w-3.5 h-3.5" />}
+                    Copy address
+                  </button>
+                  <button
+                    onClick={() => { disconnect(); setOpen(false); }}
+                    className="w-full flex items-center gap-2 px-3 py-2.5 text-xs text-destructive hover:bg-destructive/10 transition-colors"
+                  >
+                    <LogOut className="w-3.5 h-3.5" />
+                    Disconnect
+                  </button>
+                </div>
+              )}
             </div>
           ) : (
             <button
