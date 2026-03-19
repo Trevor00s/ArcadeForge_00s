@@ -4,10 +4,11 @@ import { fetchMarketplaceNFTs } from "@/hooks/useNFT";
 import { toast } from "sonner";
 
 interface NFT {
-  token_data_id: string;
-  token_name: string;
-  token_uri: string;
-  current_token_ownerships_aggregate: { nodes: { owner_address: string }[] };
+  token_data_id_hash: string;
+  name: string;
+  metadata_uri: string;
+  creator_address: string;
+  current_token_ownerships: { owner_address: string }[];
 }
 
 interface GameMeta { id: string; title: string; html: string; createdAt: string; }
@@ -32,9 +33,9 @@ export default function Marketplace() {
       const metaResults = await Promise.all(
         data.map(async (nft: NFT) => {
           try {
-            const res = await fetch(nft.token_uri);
+            const res = await fetch(nft.metadata_uri);
             if (!res.ok) return null;
-            return { id: nft.token_data_id, meta: await res.json() };
+            return { id: nft.token_data_id_hash, meta: await res.json() };
           } catch { return null; }
         })
       );
@@ -78,15 +79,15 @@ export default function Marketplace() {
       {!loading && nfts.length > 0 && (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {nfts.map(nft => {
-            const meta = metas[nft.token_data_id];
-            const owner = nft.current_token_ownerships_aggregate?.nodes?.[0]?.owner_address ?? "";
+            const meta = metas[nft.token_data_id_hash];
+            const owner = nft.current_token_ownerships?.[0]?.owner_address ?? nft.creator_address;
             return (
-              <div key={nft.token_data_id} className="rounded-2xl border border-border bg-card overflow-hidden group">
+              <div key={nft.token_data_id_hash} className="rounded-2xl border border-border bg-card overflow-hidden group">
                 <div className="h-36 bg-secondary relative overflow-hidden cursor-pointer" onClick={() => meta && setPlaying(meta)}>
                   {meta?.html ? (
                     <iframe srcDoc={meta.html} className="pointer-events-none border-0"
                       style={{ width: "200%", height: "200%", transform: "scale(0.5)", transformOrigin: "top left" }}
-                      sandbox="allow-scripts" title={nft.token_name} />
+                      sandbox="allow-scripts" title={nft.name} />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center"><Store className="w-8 h-8 text-muted-foreground/30" /></div>
                   )}
@@ -99,9 +100,9 @@ export default function Marketplace() {
                   )}
                 </div>
                 <div className="px-4 py-3 space-y-1.5">
-                  <p className="text-sm font-semibold text-foreground truncate">{nft.token_name}</p>
+                  <p className="text-sm font-semibold text-foreground truncate">{nft.name}</p>
                   <p className="text-[11px] text-muted-foreground">by {shortAddr(owner)}</p>
-                  <a href={`https://explorer.aptoslabs.com/token/${nft.token_data_id}?network=testnet`}
+                  <a href={`https://explorer.aptoslabs.com/account/${nft.creator_address}/tokens?network=testnet`}
                     target="_blank" rel="noopener noreferrer"
                     className="flex items-center gap-1 text-[11px] text-primary hover:underline">
                     <ExternalLink className="w-3 h-3" /> View on Explorer
