@@ -4,7 +4,7 @@ const CATEGORIES = ["All", "Arcade", "Puzzle", "Quiz", "Strategy", "Action"];
 
 export default function Marketplace() {
   return (
-    <div className="px-5 py-6 pb-24 space-y-6 max-w-lg mx-auto">
+    <div className="px-5 py-6 pb-6 space-y-6 max-w-lg mx-auto">
       <div className="space-y-1">
         <h1 className="text-2xl font-display italic text-foreground">Marketplace</h1>
         <p className="text-sm text-muted-foreground font-body">Discover games built by the community</p>

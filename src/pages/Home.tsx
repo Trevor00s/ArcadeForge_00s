@@ -71,7 +71,7 @@ export default function Home() {
   const navigate = useNavigate();
 
   return (
-    <div className="pb-24 overflow-y-auto">
+    <div className="pb-6 overflow-y-auto">
       {/* Hero — two columns */}
       <section className="relative px-6 pt-10 pb-8 overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-primary/8 via-transparent to-transparent" />

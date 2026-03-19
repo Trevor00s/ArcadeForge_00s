@@ -26,7 +26,7 @@ const App = () => (
           <BrowserRouter>
             <div className="min-h-screen bg-background">
               <TopBar />
-              <div className="pt-14">
+              <div className="pt-28">
               <Routes>
                 <Route path="/" element={<Home />} />
                 <Route path="/build" element={<Build />} />
