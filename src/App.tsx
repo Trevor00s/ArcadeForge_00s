@@ -5,7 +5,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import BottomNav from "@/components/BottomNav";
 import WalletProvider from "@/components/WalletProvider";
-import ThemeToggle from "@/components/ThemeToggle";
+import TopBar from "@/components/TopBar";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import Home from "./pages/Home";
 import Build from "./pages/Build";
@@ -25,7 +25,8 @@ const App = () => (
           <Sonner richColors position="bottom-right" />
           <BrowserRouter>
             <div className="min-h-screen bg-background">
-              <ThemeToggle />
+              <TopBar />
+              <div className="pt-14">
               <Routes>
                 <Route path="/" element={<Home />} />
                 <Route path="/build" element={<Build />} />
@@ -34,6 +35,7 @@ const App = () => (
                 <Route path="/profile" element={<Profile />} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
+              </div>
               <BottomNav />
             </div>
           </BrowserRouter>
