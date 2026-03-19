@@ -42,7 +42,7 @@ function OrbitalGraphic() {
       <div className="absolute inset-0 rounded-full border border-primary/20" />
       <div className="absolute inset-10 rounded-full border border-primary/15" />
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[190px] h-[190px]">
-        <img src="/logo.png" alt="ArcadeForge" className="w-full h-full object-contain mix-blend-multiply dark:mix-blend-screen" />
+        <img src="/logo.png" alt="ArcadeForge" className="w-full h-full object-contain mix-blend-multiply" />
       </div>
       {ORBIT_OUTER.map(({ emoji, style, delay }) => (
         <div
