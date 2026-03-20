@@ -1,6 +1,6 @@
-import Groq from 'groq-sdk'
+import OpenAI from 'openai'
 
-const groq = new Groq({ apiKey: process.env.GROQ_API_KEY })
+const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
 
 const SYSTEM_PROMPT = `You are an expert HTML5 canvas game developer. Generate a complete, fun, playable browser game in a single HTML file.
 
@@ -72,8 +72,8 @@ function cleanHtml(raw) {
 }
 
 export async function generateGame(prompt, history = [], currentGame = null) {
-  const completion = await groq.chat.completions.create({
-    model: 'llama-3.3-70b-versatile',
+  const completion = await openai.chat.completions.create({
+    model: 'gpt-4o',
     max_tokens: 8000,
     temperature: 0.7,
     messages: buildMessages(prompt, history, currentGame),
@@ -83,8 +83,8 @@ export async function generateGame(prompt, history = [], currentGame = null) {
 }
 
 export async function generateTutorial(prompt) {
-  const completion = await groq.chat.completions.create({
-    model: 'llama-3.3-70b-versatile',
+  const completion = await openai.chat.completions.create({
+    model: 'gpt-4o',
     max_tokens: 400,
     temperature: 0.3,
     messages: [
