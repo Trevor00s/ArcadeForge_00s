@@ -1,9 +1,16 @@
 import OpenAI from 'openai'
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENROUTER_API_KEY,
-  baseURL: 'https://openrouter.ai/api/v1',
-})
+// Lazy init — avoid crash on startup if key not set yet
+let _openai = null
+function getClient() {
+  if (!_openai) {
+    _openai = new OpenAI({
+      apiKey: process.env.OPENROUTER_API_KEY || 'missing',
+      baseURL: 'https://openrouter.ai/api/v1',
+    })
+  }
+  return _openai
+}
 
 const SYSTEM_PROMPT = `You are an expert HTML5 canvas game developer. Generate a complete, fun, playable browser game in a single HTML file.
 
@@ -75,7 +82,7 @@ function cleanHtml(raw) {
 }
 
 export async function generateGame(prompt, history = [], currentGame = null) {
-  const completion = await openai.chat.completions.create({
+  const completion = await getClient().chat.completions.create({
     model: 'deepseek/deepseek-chat-v3-0324',
     max_tokens: 8000,
     temperature: 0.7,
@@ -86,7 +93,7 @@ export async function generateGame(prompt, history = [], currentGame = null) {
 }
 
 export async function generateTutorial(prompt) {
-  const completion = await openai.chat.completions.create({
+  const completion = await getClient().chat.completions.create({
     model: 'deepseek/deepseek-chat-v3-0324',
     max_tokens: 400,
     temperature: 0.3,
