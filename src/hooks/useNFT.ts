@@ -8,13 +8,14 @@ export const COLLECTION_NAME = 'ArcadeForge Games'
 const COLLECTION_DESC = 'AI-generated games built on ArcadeForge'
 const COLLECTION_URI = 'https://arcadeforge.app'
 
+const APT_OCTAS = 100_000_000 // 1 APT = 100,000,000 octas
+
 export function useNFT() {
   const { account, signAndSubmitTransaction } = useWallet()
 
   const ensureCollection = useCallback(async () => {
     if (!account) return
     try {
-      // Try to create collection — fails silently if already exists
       const tx = await signAndSubmitTransaction({
         data: {
           function: '0x3::token::create_collection_script',
@@ -23,8 +24,8 @@ export function useNFT() {
             COLLECTION_NAME,
             COLLECTION_DESC,
             COLLECTION_URI,
-            1000,                    // max supply
-            [false, false, false],   // mutate_setting
+            1000,
+            [false, false, false],
           ],
         } as any,
       })
@@ -34,13 +35,19 @@ export function useNFT() {
     }
   }, [account, signAndSubmitTransaction])
 
-  const mintGameNFT = useCallback(async (game: { id: string; title: string }) => {
+  const mintGameNFT = useCallback(async (game: { id: string; title: string }, priceApt: number = 0) => {
     if (!account) throw new Error('Wallet not connected')
     const address = account.address.toString()
 
     await ensureCollection()
 
     const metadataUri = `https://api.testnet.shelby.xyz/shelby/v1/blobs/${address}/arcadeforge-game-${game.id}.json`
+
+    // Store price as a token property so marketplace can read it
+    const priceOctas = Math.round(priceApt * APT_OCTAS)
+    const propertyKeys = priceApt > 0 ? ['price_octas'] : []
+    const propertyValues = priceApt > 0 ? [String(priceOctas)] : []
+    const propertyTypes = priceApt > 0 ? ['0x1::string::String'] : []
 
     const tx = await signAndSubmitTransaction({
       data: {
@@ -50,16 +57,16 @@ export function useNFT() {
           COLLECTION_NAME,
           game.title,
           `AI-generated game: ${game.title}`,
-          1,          // balance
-          1,          // maximum (1 = unique NFT)
+          1,
+          1,
           metadataUri,
-          address,    // royalty payee
-          100,        // royalty_points_denominator
-          0,          // royalty_points_numerator (0% royalty)
-          [false, false, false, false, false], // mutate_setting
-          [],         // property_keys
-          [],         // property_values
-          [],         // property_types
+          address,
+          100,
+          0,
+          [false, false, false, false, false],
+          propertyKeys,
+          propertyValues,
+          propertyTypes,
         ],
       } as any,
     })
@@ -68,7 +75,21 @@ export function useNFT() {
     return result.hash
   }, [account, signAndSubmitTransaction, ensureCollection])
 
-  return { mintGameNFT, connected: !!account }
+  // Pay APT to the game owner to unlock play
+  const payToPlay = useCallback(async (ownerAddress: string, priceOctas: number) => {
+    if (!account) throw new Error('Wallet not connected')
+    const tx = await signAndSubmitTransaction({
+      data: {
+        function: '0x1::aptos_account::transfer',
+        typeArguments: [],
+        functionArguments: [ownerAddress, priceOctas],
+      } as any,
+    })
+    const result = await aptos.waitForTransaction({ transactionHash: tx.hash })
+    return result.hash
+  }, [account, signAndSubmitTransaction])
+
+  return { mintGameNFT, payToPlay, connected: !!account }
 }
 
 // Fetch all NFTs from ArcadeForge Games collections via Aptos Indexer
@@ -87,6 +108,7 @@ export async function fetchMarketplaceNFTs() {
         metadata_uri
         description
         creator_address
+        default_properties
         current_token_ownerships(limit: 1) {
           owner_address
         }

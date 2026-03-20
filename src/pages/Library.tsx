@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { FolderOpen, Play, Trash2, Download, Loader2, Sparkles, ExternalLink } from "lucide-react";
+import { FolderOpen, Play, Trash2, Download, Loader2, Sparkles, ExternalLink, X } from "lucide-react";
 import { useShelby } from "@/hooks/useShelby";
 import { useNFT } from "@/hooks/useNFT";
 import { toast } from "sonner";
@@ -22,6 +22,9 @@ export default function Library() {
   const [mintedIds, setMintedIds] = useState<Record<string, string>>(() => {
     try { return JSON.parse(localStorage.getItem("af-minted") || "{}") } catch { return {} }
   });
+  // Price dialog state
+  const [pendingMint, setPendingMint] = useState<Game | null>(null);
+  const [priceInput, setPriceInput] = useState("0");
   const navigate = useNavigate();
 
   useEffect(() => { fetchGames(); }, [connected]);
@@ -38,12 +41,21 @@ export default function Library() {
     }
   }
 
-  async function handleMint(game: Game) {
+  function openMintDialog(game: Game) {
     if (minting) return;
+    setPriceInput("0");
+    setPendingMint(game);
+  }
+
+  async function confirmMint() {
+    if (!pendingMint) return;
+    const game = pendingMint;
+    setPendingMint(null);
+    const priceApt = Math.max(0, parseFloat(priceInput) || 0);
     setMinting(game.id);
     try {
       toast.info("Minting NFT… approve in Petra");
-      const txHash = await mintGameNFT(game);
+      const txHash = await mintGameNFT(game, priceApt);
       const updated = { ...mintedIds, [game.id]: txHash };
       setMintedIds(updated);
       localStorage.setItem("af-minted", JSON.stringify(updated));
@@ -195,7 +207,7 @@ export default function Library() {
                     </a>
                   ) : (
                     <button
-                      onClick={() => handleMint(game)}
+                      onClick={() => openMintDialog(game)}
                       disabled={!!minting}
                       className="w-full flex items-center justify-center gap-1.5 h-8 rounded-xl bg-primary/10 text-primary text-xs font-semibold hover:bg-primary/20 transition-all disabled:opacity-50"
                     >
@@ -210,6 +222,55 @@ export default function Library() {
               </div>
             );
           })}
+        </div>
+      )}
+
+      {/* Price dialog */}
+      {pendingMint && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/40 backdrop-blur-sm px-6">
+          <div className="w-full max-w-xs bg-card rounded-2xl border border-border shadow-xl p-5 space-y-4">
+            <div className="flex items-start justify-between gap-2">
+              <div>
+                <p className="text-sm font-semibold text-foreground">Set play price</p>
+                <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">
+                  How much APT should players pay to unlock <span className="text-foreground font-medium">{pendingMint.title}</span>?
+                </p>
+              </div>
+              <button onClick={() => setPendingMint(null)} className="text-muted-foreground hover:text-foreground mt-0.5">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="relative">
+              <input
+                type="number"
+                min="0"
+                step="0.01"
+                value={priceInput}
+                onChange={e => setPriceInput(e.target.value)}
+                className="w-full h-10 pl-3 pr-12 rounded-xl bg-secondary border border-border text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                placeholder="0"
+              />
+              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground font-medium">APT</span>
+            </div>
+
+            <p className="text-[11px] text-muted-foreground">Set to 0 for a free game.</p>
+
+            <div className="flex gap-2">
+              <button
+                onClick={() => setPendingMint(null)}
+                className="flex-1 h-9 rounded-xl text-xs font-medium text-muted-foreground hover:bg-secondary transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmMint}
+                className="flex-1 h-9 rounded-xl bg-primary text-background text-xs font-bold hover:bg-primary/90 transition-colors flex items-center justify-center gap-1.5"
+              >
+                <Sparkles className="w-3 h-3" /> Mint NFT
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

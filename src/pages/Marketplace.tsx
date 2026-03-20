@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
-import { Store, Play, Loader2, ExternalLink } from "lucide-react";
+import { Store, Play, Loader2, ExternalLink, Coins, Lock } from "lucide-react";
 import { fetchMarketplaceNFTs } from "@/hooks/useNFT";
+import { useNFT } from "@/hooks/useNFT";
+import { useWallet } from "@/hooks/useWallet";
 import { toast } from "sonner";
 
 interface NFT {
@@ -8,13 +10,32 @@ interface NFT {
   name: string;
   metadata_uri: string;
   creator_address: string;
+  default_properties: any;
   current_token_ownerships: { owner_address: string }[];
 }
 
 interface GameMeta { id: string; title: string; html: string; createdAt: string; }
 
+const APT_OCTAS = 100_000_000;
+
 function shortAddr(addr: string) {
   return addr ? `${addr.slice(0, 6)}…${addr.slice(-4)}` : "";
+}
+
+function getPriceOctas(nft: NFT): number {
+  try {
+    const props = nft.default_properties;
+    if (!props) return 0;
+    const map = typeof props === "string" ? JSON.parse(props) : props;
+    const val = map?.map?.price_octas?.value ?? map?.price_octas;
+    return val ? parseInt(val) : 0;
+  } catch {
+    return 0;
+  }
+}
+
+function formatApt(octas: number) {
+  return (octas / APT_OCTAS).toFixed(octas % APT_OCTAS === 0 ? 0 : 2) + " APT";
 }
 
 export default function Marketplace() {
@@ -22,6 +43,14 @@ export default function Marketplace() {
   const [metas, setMetas] = useState<Record<string, GameMeta>>({});
   const [loading, setLoading] = useState(true);
   const [playing, setPlaying] = useState<GameMeta | null>(null);
+  const [paying, setPaying] = useState<string | null>(null);
+  const [unlockedIds, setUnlockedIds] = useState<Set<string>>(() => {
+    try { return new Set(JSON.parse(localStorage.getItem("af-unlocked") || "[]")); }
+    catch { return new Set(); }
+  });
+
+  const { payToPlay, connected } = useNFT();
+  const { address } = useWallet();
 
   useEffect(() => { load(); }, []);
 
@@ -44,6 +73,43 @@ export default function Marketplace() {
       setMetas(metaMap);
     } catch { toast.error("Could not load marketplace"); }
     finally { setLoading(false); }
+  }
+
+  async function handlePlay(nft: NFT) {
+    const meta = metas[nft.token_data_id_hash];
+    if (!meta) return;
+
+    const priceOctas = getPriceOctas(nft);
+    const owner = nft.current_token_ownerships?.[0]?.owner_address ?? nft.creator_address;
+    const isOwn = address && (address === owner || address === nft.creator_address);
+    const isUnlocked = unlockedIds.has(nft.token_data_id_hash);
+
+    if (priceOctas === 0 || isOwn || isUnlocked) {
+      setPlaying(meta);
+      return;
+    }
+
+    // Needs payment
+    if (!connected) {
+      toast.error("Connect your wallet to play paid games");
+      return;
+    }
+
+    setPaying(nft.token_data_id_hash);
+    try {
+      toast.info(`Paying ${formatApt(priceOctas)}… approve in Petra`);
+      await payToPlay(owner, priceOctas);
+      const next = new Set(unlockedIds);
+      next.add(nft.token_data_id_hash);
+      setUnlockedIds(next);
+      localStorage.setItem("af-unlocked", JSON.stringify([...next]));
+      toast.success("Payment sent! Loading game…");
+      setPlaying(meta);
+    } catch (err: any) {
+      toast.error(err.message || "Payment failed");
+    } finally {
+      setPaying(null);
+    }
   }
 
   if (playing) {
@@ -81,9 +147,17 @@ export default function Marketplace() {
           {nfts.map(nft => {
             const meta = metas[nft.token_data_id_hash];
             const owner = nft.current_token_ownerships?.[0]?.owner_address ?? nft.creator_address;
+            const priceOctas = getPriceOctas(nft);
+            const isFree = priceOctas === 0;
+            const isOwn = address && (address === owner || address === nft.creator_address);
+            const isUnlocked = unlockedIds.has(nft.token_data_id_hash);
+            const isPaying = paying === nft.token_data_id_hash;
+            const canPlayFree = isFree || isOwn || isUnlocked;
+
             return (
               <div key={nft.token_data_id_hash} className="rounded-2xl border border-border bg-card overflow-hidden group">
-                <div className="h-36 bg-secondary relative overflow-hidden cursor-pointer" onClick={() => meta && setPlaying(meta)}>
+                {/* Preview */}
+                <div className="h-36 bg-secondary relative overflow-hidden">
                   {meta?.html ? (
                     <iframe srcDoc={meta.html} className="pointer-events-none border-0"
                       style={{ width: "200%", height: "200%", transform: "scale(0.5)", transformOrigin: "top left" }}
@@ -91,20 +165,56 @@ export default function Marketplace() {
                   ) : (
                     <div className="w-full h-full flex items-center justify-center"><Store className="w-8 h-8 text-muted-foreground/30" /></div>
                   )}
-                  {meta && (
-                    <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-foreground/20">
-                      <div className="w-10 h-10 rounded-full bg-foreground flex items-center justify-center">
-                        <Play className="w-4 h-4 text-background ml-0.5" />
+                  {/* Locked overlay */}
+                  {!canPlayFree && (
+                    <div className="absolute inset-0 bg-foreground/30 backdrop-blur-[2px] flex items-center justify-center">
+                      <div className="flex flex-col items-center gap-1">
+                        <Lock className="w-5 h-5 text-background" />
+                        <span className="text-[11px] font-bold text-background">{formatApt(priceOctas)}</span>
                       </div>
                     </div>
                   )}
                 </div>
-                <div className="px-4 py-3 space-y-1.5">
-                  <p className="text-sm font-semibold text-foreground truncate">{nft.name}</p>
-                  <p className="text-[11px] text-muted-foreground">by {shortAddr(owner)}</p>
+
+                {/* Info */}
+                <div className="px-4 py-3 space-y-2">
+                  <div>
+                    <p className="text-sm font-semibold text-foreground truncate">{nft.name}</p>
+                    <p className="text-[11px] text-muted-foreground">by {shortAddr(owner)}</p>
+                  </div>
+
+                  {/* Price tag */}
+                  {!isFree && !isOwn && (
+                    <div className="flex items-center gap-1 text-[11px] text-amber-500 font-semibold">
+                      <Coins className="w-3 h-3" />
+                      {isUnlocked ? "Unlocked" : formatApt(priceOctas) + " to play"}
+                    </div>
+                  )}
+                  {isFree && (
+                    <div className="text-[11px] text-emerald-500 font-semibold">Free</div>
+                  )}
+                  {isOwn && (
+                    <div className="text-[11px] text-primary font-semibold">Your game</div>
+                  )}
+
+                  {/* Play button */}
+                  <button
+                    onClick={() => handlePlay(nft)}
+                    disabled={!meta || isPaying}
+                    className="w-full flex items-center justify-center gap-1.5 h-8 rounded-xl text-xs font-semibold transition-all disabled:opacity-50 bg-primary/10 text-primary hover:bg-primary/20"
+                  >
+                    {isPaying ? (
+                      <><Loader2 className="w-3 h-3 animate-spin" /> Paying…</>
+                    ) : canPlayFree ? (
+                      <><Play className="w-3 h-3" /> Play</>
+                    ) : (
+                      <><Coins className="w-3 h-3" /> Buy & Play</>
+                    )}
+                  </button>
+
                   <a href={`https://explorer.aptoslabs.com/account/${nft.creator_address}/tokens?network=testnet`}
                     target="_blank" rel="noopener noreferrer"
-                    className="flex items-center gap-1 text-[11px] text-primary hover:underline">
+                    className="flex items-center gap-1 text-[11px] text-muted-foreground hover:text-primary hover:underline transition-colors">
                     <ExternalLink className="w-3 h-3" /> View on Explorer
                   </a>
                 </div>
