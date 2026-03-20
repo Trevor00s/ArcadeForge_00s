@@ -9,8 +9,8 @@ interface NFT {
   token_data_id_hash: string;
   name: string;
   metadata_uri: string;
+  description: string;
   creator_address: string;
-  default_properties: any;
   current_token_ownerships: { owner_address: string }[];
 }
 
@@ -23,12 +23,11 @@ function shortAddr(addr: string) {
 }
 
 function getPriceOctas(nft: NFT): number {
+  // Price encoded in description as "price:{octas}|..."
   try {
-    const props = nft.default_properties;
-    if (!props) return 0;
-    const map = typeof props === "string" ? JSON.parse(props) : props;
-    const val = map?.map?.price_octas?.value ?? map?.price_octas;
-    return val ? parseInt(val) : 0;
+    if (!nft.description) return 0;
+    const match = nft.description.match(/^price:(\d+)\|/);
+    return match ? parseInt(match[1]) : 0;
   } catch {
     return 0;
   }

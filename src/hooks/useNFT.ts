@@ -45,9 +45,10 @@ export function useNFT() {
 
     // Store price as a token property so marketplace can read it
     const priceOctas = Math.round(priceApt * APT_OCTAS)
-    const propertyKeys = priceApt > 0 ? ['price_octas'] : []
-    const propertyValues = priceApt > 0 ? [String(priceOctas)] : []
-    const propertyTypes = priceApt > 0 ? ['0x1::string::String'] : []
+    // Encode price in description so marketplace can read it without extra fields
+    const description = priceOctas > 0
+      ? `price:${priceOctas}|AI-generated game: ${game.title}`
+      : `AI-generated game: ${game.title}`
 
     const tx = await signAndSubmitTransaction({
       data: {
@@ -56,7 +57,7 @@ export function useNFT() {
         functionArguments: [
           COLLECTION_NAME,
           game.title,
-          `AI-generated game: ${game.title}`,
+          description,
           1,
           1,
           metadataUri,
@@ -64,9 +65,9 @@ export function useNFT() {
           100,
           0,
           [false, false, false, false, false],
-          propertyKeys,
-          propertyValues,
-          propertyTypes,
+          [],
+          [],
+          [],
         ],
       } as any,
     })
@@ -108,7 +109,6 @@ export async function fetchMarketplaceNFTs() {
         metadata_uri
         description
         creator_address
-        default_properties
         current_token_ownerships(limit: 1) {
           owner_address
         }
