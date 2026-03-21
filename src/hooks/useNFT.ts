@@ -15,6 +15,19 @@ export function useNFT() {
 
   const ensureCollection = useCallback(async () => {
     if (!account) return
+    // Check first — avoids Petra showing simulation error if collection exists
+    try {
+      await aptos.view({
+        payload: {
+          function: '0x3::token::get_collection_supply',
+          typeArguments: [],
+          functionArguments: [account.address.toString(), COLLECTION_NAME],
+        } as any,
+      })
+      return // collection already exists
+    } catch {
+      // collection doesn't exist, create it
+    }
     try {
       const tx = await signAndSubmitTransaction({
         data: {
@@ -31,7 +44,7 @@ export function useNFT() {
       })
       await aptos.waitForTransaction({ transactionHash: tx.hash })
     } catch {
-      // Collection already exists — continue
+      // ignore
     }
   }, [account, signAndSubmitTransaction])
 
