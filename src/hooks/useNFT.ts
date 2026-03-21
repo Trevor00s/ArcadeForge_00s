@@ -15,19 +15,21 @@ export function useNFT() {
 
   const ensureCollection = useCallback(async () => {
     if (!account) return
-    // Check first — avoids Petra showing simulation error if collection exists
+    const address = account.address.toString()
+    const cacheKey = `af-col-${address}`
+    // Skip if already known to exist (localStorage cache)
+    if (localStorage.getItem(cacheKey)) return
+    // Check via REST — no wallet interaction
     try {
-      await aptos.view({
-        payload: {
-          function: '0x3::token::get_collection_supply',
-          typeArguments: [],
-          functionArguments: [account.address.toString(), COLLECTION_NAME],
-        } as any,
-      })
-      return // collection already exists
-    } catch {
-      // collection doesn't exist, create it
-    }
+      const res = await fetch(
+        `https://api.testnet.aptoslabs.com/v1/accounts/${address}/resource/0x3%3A%3Atoken%3A%3ACollections`
+      )
+      if (res.ok) {
+        localStorage.setItem(cacheKey, '1')
+        return // collection resource exists
+      }
+    } catch { /* ignore */ }
+    // Create collection
     try {
       const tx = await signAndSubmitTransaction({
         data: {
@@ -43,9 +45,8 @@ export function useNFT() {
         } as any,
       })
       await aptos.waitForTransaction({ transactionHash: tx.hash })
-    } catch {
-      // ignore
-    }
+    } catch { /* ignore */ }
+    localStorage.setItem(cacheKey, '1')
   }, [account, signAndSubmitTransaction])
 
   const mintGameNFT = useCallback(async (game: { id: string; title: string }, priceApt: number = 0) => {
