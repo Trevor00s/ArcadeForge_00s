@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { FolderOpen, Play, Trash2, Download, Loader2, Sparkles, ExternalLink, X } from "lucide-react";
+import { FolderOpen, Play, Trash2, Download, Loader2, Sparkles, ExternalLink, X, Tag } from "lucide-react";
 import { useShelby } from "@/hooks/useShelby";
 import { useNFT } from "@/hooks/useNFT";
 import { toast } from "sonner";
@@ -13,17 +13,19 @@ interface Game {
 }
 
 export default function Library() {
-  const { getGames, deleteGame, connected } = useShelby();
+  const { getGames, deleteGame, updateGamePrice, connected } = useShelby();
   const { mintGameNFT } = useNFT();
   const [games, setGames] = useState<Game[]>([]);
   const [loading, setLoading] = useState(true);
   const [playingGame, setPlayingGame] = useState<Game | null>(null);
   const [minting, setMinting] = useState<string | null>(null);
+  const [listing, setListing] = useState<string | null>(null);
   const [mintedIds, setMintedIds] = useState<Record<string, string>>(() => {
     try { return JSON.parse(localStorage.getItem("af-minted") || "{}") } catch { return {} }
   });
-  // Price dialog state
+  // Price dialog state (shared for mint + listing)
   const [pendingMint, setPendingMint] = useState<Game | null>(null);
+  const [pendingList, setPendingList] = useState<Game | null>(null);
   const [priceInput, setPriceInput] = useState("0");
   const navigate = useNavigate();
 
@@ -64,6 +66,23 @@ export default function Library() {
       toast.error(err.message || "Mint failed");
     } finally {
       setMinting(null);
+    }
+  }
+
+  async function confirmList() {
+    if (!pendingList) return;
+    const game = pendingList;
+    setPendingList(null);
+    const priceApt = Math.max(0, parseFloat(priceInput) || 0);
+    setListing(game.id);
+    try {
+      toast.info("Updating listing… approve in Petra");
+      await updateGamePrice(game.id, priceApt);
+      toast.success(priceApt === 0 ? "Game set to free!" : `Listed for ${priceApt} APT!`);
+    } catch (err: any) {
+      toast.error(err.message || "Listing failed");
+    } finally {
+      setListing(null);
     }
   }
 
@@ -196,15 +215,28 @@ export default function Library() {
 
                   {/* Mint / NFT row */}
                   {isMinted ? (
-                    <a
-                      href={`https://explorer.aptoslabs.com/txn/${mintedIds[game.id]}?network=testnet`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center gap-1.5 text-xs text-primary hover:underline"
-                    >
-                      <ExternalLink className="w-3 h-3" />
-                      View NFT on Explorer
-                    </a>
+                    <div className="space-y-1.5">
+                      <button
+                        onClick={() => { setPriceInput("0"); setPendingList(game); }}
+                        disabled={listing === game.id}
+                        className="w-full flex items-center justify-center gap-1.5 h-8 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 text-xs font-semibold hover:bg-amber-500/20 transition-all disabled:opacity-50"
+                      >
+                        {listing === game.id ? (
+                          <><Loader2 className="w-3 h-3 animate-spin" /> Listing…</>
+                        ) : (
+                          <><Tag className="w-3 h-3" /> List on Marketplace</>
+                        )}
+                      </button>
+                      <a
+                        href={`https://explorer.aptoslabs.com/txn/${mintedIds[game.id]}?network=testnet`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-1 text-[11px] text-muted-foreground hover:text-primary hover:underline"
+                      >
+                        <ExternalLink className="w-3 h-3" />
+                        View NFT on Explorer
+                      </a>
+                    </div>
                   ) : (
                     <button
                       onClick={() => openMintDialog(game)}
@@ -222,6 +254,42 @@ export default function Library() {
               </div>
             );
           })}
+        </div>
+      )}
+
+      {/* Listing dialog */}
+      {pendingList && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/40 backdrop-blur-sm px-6">
+          <div className="w-full max-w-xs bg-card rounded-2xl border border-border shadow-xl p-5 space-y-4">
+            <div className="flex items-start justify-between gap-2">
+              <div>
+                <p className="text-sm font-semibold text-foreground">List on Marketplace</p>
+                <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">
+                  Set the price players pay to unlock <span className="text-foreground font-medium">{pendingList.title}</span>.
+                </p>
+              </div>
+              <button onClick={() => setPendingList(null)} className="text-muted-foreground hover:text-foreground mt-0.5">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            <div className="relative">
+              <input
+                type="number" min="0" step="0.01"
+                value={priceInput}
+                onChange={e => setPriceInput(e.target.value)}
+                className="w-full h-10 pl-3 pr-12 rounded-xl bg-secondary border border-border text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                placeholder="0"
+              />
+              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground font-medium">APT</span>
+            </div>
+            <p className="text-[11px] text-muted-foreground">Set to 0 for a free game. Requires wallet approval.</p>
+            <div className="flex gap-2">
+              <button onClick={() => setPendingList(null)} className="flex-1 h-9 rounded-xl text-xs font-medium text-muted-foreground hover:bg-secondary transition-colors">Cancel</button>
+              <button onClick={confirmList} className="flex-1 h-9 rounded-xl bg-amber-500 text-white text-xs font-bold hover:bg-amber-500/90 transition-colors flex items-center justify-center gap-1.5">
+                <Tag className="w-3 h-3" /> List
+              </button>
+            </div>
+          </div>
         </div>
       )}
 

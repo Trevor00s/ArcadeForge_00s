@@ -14,7 +14,7 @@ interface NFT {
   current_token_ownerships: { owner_address: string }[];
 }
 
-interface GameMeta { id: string; title: string; html: string; createdAt: string; }
+interface GameMeta { id: string; title: string; html: string; createdAt: string; priceApt?: number; }
 
 const APT_OCTAS = 100_000_000;
 
@@ -22,8 +22,10 @@ function shortAddr(addr: string) {
   return addr ? `${addr.slice(0, 6)}…${addr.slice(-4)}` : "";
 }
 
-function getPriceOctas(nft: NFT): number {
-  // Price encoded in description as "price:{octas}|..."
+function getPriceOctas(nft: NFT, meta?: GameMeta): number {
+  // Shelby blob price takes priority (updated via "List on Marketplace")
+  if (meta?.priceApt !== undefined) return Math.round(meta.priceApt * APT_OCTAS);
+  // Fallback: price encoded in NFT description at mint time
   try {
     if (!nft.description) return 0;
     const match = nft.description.match(/^price:(\d+)\|/);
@@ -78,7 +80,7 @@ export default function Marketplace() {
     const meta = metas[nft.token_data_id_hash];
     if (!meta) return;
 
-    const priceOctas = getPriceOctas(nft);
+    const priceOctas = getPriceOctas(nft, meta);
     const owner = nft.current_token_ownerships?.[0]?.owner_address ?? nft.creator_address;
     const isOwn = address && (address === owner || address === nft.creator_address);
     const isUnlocked = unlockedIds.has(nft.token_data_id_hash);
@@ -146,7 +148,7 @@ export default function Marketplace() {
           {nfts.map(nft => {
             const meta = metas[nft.token_data_id_hash];
             const owner = nft.current_token_ownerships?.[0]?.owner_address ?? nft.creator_address;
-            const priceOctas = getPriceOctas(nft);
+            const priceOctas = getPriceOctas(nft, meta);
             const isFree = priceOctas === 0;
             const isOwn = address && (address === owner || address === nft.creator_address);
             const isUnlocked = unlockedIds.has(nft.token_data_id_hash);
