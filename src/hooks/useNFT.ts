@@ -57,9 +57,10 @@ export function useNFT() {
 
     const metadataUri = `https://api.testnet.shelby.xyz/shelby/v1/blobs/${address}/arcadeforge-game-${game.id}.json`
 
-    // Store price as a token property so marketplace can read it
+    // Token name must be unique per collection — append short game id
+    const tokenName = `${game.title} #${game.id.slice(0, 6)}`
+
     const priceOctas = Math.round(priceApt * APT_OCTAS)
-    // Encode price in description so marketplace can read it without extra fields
     const description = priceOctas > 0
       ? `price:${priceOctas}|AI-generated game: ${game.title}`
       : `AI-generated game: ${game.title}`
@@ -70,7 +71,7 @@ export function useNFT() {
         typeArguments: [],
         functionArguments: [
           COLLECTION_NAME,
-          game.title,
+          tokenName,
           description,
           1,
           1,
