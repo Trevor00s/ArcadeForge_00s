@@ -76,8 +76,8 @@ export default function Library() {
     const priceApt = Math.max(0, parseFloat(priceInput) || 0);
     setListing(game.id);
     try {
-      toast.info("Updating listing… approve in Petra");
-      await updateGamePrice(game.id, priceApt);
+      toast.info("Listing game on marketplace…");
+      await updateGamePrice(game.id, priceApt, game.title);
       toast.success(priceApt === 0 ? "Game set to free!" : `Listed for ${priceApt} APT!`);
     } catch (err: any) {
       toast.error(err.message || "Listing failed");

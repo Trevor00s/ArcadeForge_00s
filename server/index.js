@@ -6,6 +6,7 @@ import { existsSync } from 'fs'
 import generateRoute from './routes/generate.js'
 import gamesRoute from './routes/games.js'
 import profileRoute from './routes/profile.js'
+import listingsRoute from './routes/listings.js'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
@@ -18,6 +19,7 @@ app.use(express.json({ limit: '5mb' }))
 app.use('/api/generate', generateRoute)
 app.use('/api/games', gamesRoute)
 app.use('/api/profile', profileRoute)
+app.use('/api/listings', listingsRoute)
 app.get('/api/health', (_, res) => res.json({ ok: true }))
 
 const distPath = path.join(__dirname, '..', 'dist')

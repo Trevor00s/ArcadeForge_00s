@@ -96,13 +96,16 @@ export function useShelby() {
     setIndex(address, ids.filter(id => id !== gameId))
   }, [account, getIndex, setIndex])
 
-  const updateGamePrice = useCallback(async (gameId: string, priceApt: number) => {
+  const updateGamePrice = useCallback(async (gameId: string, priceApt: number, name: string) => {
     if (!account) throw new Error('Wallet not connected')
-    const address = account.address.toString()
-    const current = await downloadJson(address, `arcadeforge-game-${gameId}.json`)
-    if (!current) throw new Error('Game not found in Shelby')
-    await uploadJson(`arcadeforge-game-${gameId}.json`, { ...current, priceApt })
-  }, [account, uploadJson, downloadJson])
+    const owner = account.address.toString()
+    const res = await fetch('/api/listings', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ gameId, priceApt, owner, name }),
+    })
+    if (!res.ok) throw new Error('Listing failed')
+  }, [account])
 
   return { saveGame, getGames, deleteGame, updateGamePrice, connected: !!account }
 }
