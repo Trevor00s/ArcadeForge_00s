@@ -12,7 +12,7 @@ const STEPS = [
 const STATS = [
   { icon: Gamepad2, value: "1,200+", label: "Games Built" },
   { icon: Users, value: "8,500+", label: "Players" },
-  { icon: Zap, value: "<10s", label: "Build Time" },
+  { icon: Zap, value: "<1min", label: "Build Time" },
 ];
 
 const CATEGORIES = [
