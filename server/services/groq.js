@@ -102,7 +102,7 @@ async function withRetry(fn, maxRetries = 3) {
 export async function generateGame(prompt, history = [], currentGame = null) {
   const raw = await withRetry(async () => {
     const completion = await getClient().chat.completions.create({
-      model: 'qwen/qwen3-coder:free',
+      model: 'deepseek/deepseek-chat-v3-0324',
       max_tokens: 8000,
       temperature: 0.7,
       messages: buildMessages(prompt, history, currentGame),
@@ -115,7 +115,7 @@ export async function generateGame(prompt, history = [], currentGame = null) {
 export async function generateTutorial(prompt) {
   const raw = await withRetry(async () => {
     const completion = await getClient().chat.completions.create({
-      model: 'qwen/qwen3-coder:free',
+      model: 'deepseek/deepseek-chat-v3-0324',
       max_tokens: 400,
       temperature: 0.3,
       messages: [
