@@ -29,9 +29,9 @@ export default function Build() {
         </button>
       </div>
 
-      {/* Content */}
-      <div className="flex-1 overflow-hidden">
-        {!showPreview ? (
+      {/* Content — both mounted at all times to preserve generation state */}
+      <div className="flex-1 overflow-hidden relative">
+        <div className={`absolute inset-0 ${showPreview ? "invisible pointer-events-none" : ""}`}>
           <ChatPanel
             onGameGenerated={(html) => {
               setGameHtml(html);
@@ -40,9 +40,10 @@ export default function Build() {
             isGenerating={isGenerating}
             setIsGenerating={setIsGenerating}
           />
-        ) : (
+        </div>
+        <div className={`absolute inset-0 ${!showPreview ? "invisible pointer-events-none" : ""}`}>
           <GameStage gameHtml={gameHtml} isGenerating={isGenerating} />
-        )}
+        </div>
       </div>
     </div>
   );
