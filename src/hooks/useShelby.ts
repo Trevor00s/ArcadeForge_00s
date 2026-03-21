@@ -99,10 +99,11 @@ export function useShelby() {
   const updateGamePrice = useCallback(async (gameId: string, priceApt: number, name: string) => {
     if (!account) throw new Error('Wallet not connected')
     const owner = account.address.toString()
+    const metadata_uri = `https://api.testnet.shelby.xyz/shelby/v1/blobs/${owner}/arcadeforge-game-${gameId}.json`
     const res = await fetch('/api/listings', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ gameId, priceApt, owner, name }),
+      body: JSON.stringify({ gameId, priceApt, owner, name, metadata_uri }),
     })
     if (!res.ok) throw new Error('Listing failed')
   }, [account])
