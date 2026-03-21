@@ -11,7 +11,6 @@ interface NFT {
   metadata_uri: string;
   description: string;
   creator_address: string;
-  current_token_ownerships: { owner_address: string }[];
 }
 
 interface GameMeta { id: string; title: string; html: string; createdAt: string; priceApt?: number; }
@@ -88,7 +87,7 @@ export default function Marketplace() {
     if (!meta) return;
 
     const priceOctas = getPriceOctas(nft, meta, serverListings);
-    const owner = nft.current_token_ownerships?.[0]?.owner_address ?? nft.creator_address;
+    const owner = nft.creator_address;
     const isOwn = address && (address === owner || address === nft.creator_address);
     const isUnlocked = unlockedIds.has(nft.token_data_id_hash);
 
@@ -154,7 +153,7 @@ export default function Marketplace() {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {nfts.map(nft => {
             const meta = metas[nft.token_data_id_hash];
-            const owner = nft.current_token_ownerships?.[0]?.owner_address ?? nft.creator_address;
+            const owner = nft.creator_address;
             const priceOctas = getPriceOctas(nft, meta, serverListings);
             const isFree = priceOctas === 0;
             const isOwn = address && (address === owner || address === nft.creator_address);

@@ -109,9 +109,6 @@ export async function fetchMarketplaceNFTs() {
         metadata_uri
         description
         creator_address
-        current_token_ownerships(limit: 1) {
-          owner_address
-        }
       }
     }
   `
