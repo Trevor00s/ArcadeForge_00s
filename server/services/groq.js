@@ -83,7 +83,7 @@ function cleanHtml(raw) {
 
 export async function generateGame(prompt, history = [], currentGame = null) {
   const completion = await getClient().chat.completions.create({
-    model: 'deepseek/deepseek-chat-v3-0324:free',
+    model: 'deepseek/deepseek-chat:free',
     max_tokens: 8000,
     temperature: 0.7,
     messages: buildMessages(prompt, history, currentGame),
@@ -94,7 +94,7 @@ export async function generateGame(prompt, history = [], currentGame = null) {
 
 export async function generateTutorial(prompt) {
   const completion = await getClient().chat.completions.create({
-    model: 'deepseek/deepseek-chat-v3-0324:free',
+    model: 'deepseek/deepseek-chat:free',
     max_tokens: 400,
     temperature: 0.3,
     messages: [
