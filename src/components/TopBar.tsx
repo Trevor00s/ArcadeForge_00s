@@ -3,6 +3,7 @@ import { NavLink } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { useWallet } from "@/hooks/useWallet";
 import { useTheme } from "@/contexts/ThemeContext";
+import { useBuild } from "@/contexts/BuildContext";
 import { useState, useRef, useEffect } from "react";
 import { toast } from "sonner";
 
@@ -17,6 +18,7 @@ const NAV_ITEMS = [
 export default function TopBar() {
   const { connected, connecting, shortAddress, address, connectPetra, disconnect } = useWallet();
   const { theme, toggle } = useTheme();
+  const { isGenerating } = useBuild();
   const [open, setOpen] = useState(false);
   const [copied, setCopied] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -58,7 +60,7 @@ export default function TopBar() {
               end={to === "/"}
               className={({ isActive }) =>
                 cn(
-                  "flex items-center gap-1.5 px-3 h-9 rounded-xl text-xs font-medium transition-all",
+                  "relative flex items-center gap-1.5 px-3 h-9 rounded-xl text-xs font-medium transition-all",
                   isActive
                     ? "text-primary bg-primary/10"
                     : "text-muted-foreground hover:text-foreground hover:bg-secondary"
@@ -67,6 +69,9 @@ export default function TopBar() {
             >
               <Icon className="w-4 h-4 shrink-0" strokeWidth={1.8} />
               <span className="hidden sm:block">{label}</span>
+              {to === "/build" && isGenerating && (
+                <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-primary animate-pulse" />
+              )}
             </NavLink>
           ))}
         </nav>

@@ -1,10 +1,10 @@
 import { useState } from "react";
 import ChatPanel from "@/components/ChatPanel";
 import GameStage from "@/components/GameStage";
+import { useBuild } from "@/contexts/BuildContext";
 
 export default function Build() {
-  const [gameHtml, setGameHtml] = useState<string | null>(null);
-  const [isGenerating, setIsGenerating] = useState(false);
+  const { gameHtml, isGenerating } = useBuild();
   const [showPreview, setShowPreview] = useState(false);
 
   return (
@@ -29,17 +29,10 @@ export default function Build() {
         </button>
       </div>
 
-      {/* Content — both mounted at all times to preserve generation state */}
+      {/* Both panels always mounted — CSS visibility only */}
       <div className="flex-1 overflow-hidden relative">
         <div className={`absolute inset-0 ${showPreview ? "invisible pointer-events-none" : ""}`}>
-          <ChatPanel
-            onGameGenerated={(html) => {
-              setGameHtml(html);
-              setShowPreview(true);
-            }}
-            isGenerating={isGenerating}
-            setIsGenerating={setIsGenerating}
-          />
+          <ChatPanel onGameGenerated={() => setShowPreview(true)} />
         </div>
         <div className={`absolute inset-0 ${!showPreview ? "invisible pointer-events-none" : ""}`}>
           <GameStage gameHtml={gameHtml} isGenerating={isGenerating} />

@@ -6,6 +6,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import WalletProvider from "@/components/WalletProvider";
 import TopBar from "@/components/TopBar";
 import { ThemeProvider } from "@/contexts/ThemeContext";
+import { BuildProvider } from "@/contexts/BuildContext";
 import Home from "./pages/Home";
 import Build from "./pages/Build";
 import Marketplace from "./pages/Marketplace";
@@ -17,6 +18,7 @@ const queryClient = new QueryClient();
 
 const App = () => (
   <ThemeProvider>
+    <BuildProvider>
     <WalletProvider>
       <QueryClientProvider client={queryClient}>
         <TooltipProvider>
@@ -40,6 +42,7 @@ const App = () => (
         </TooltipProvider>
       </QueryClientProvider>
     </WalletProvider>
+    </BuildProvider>
   </ThemeProvider>
 );
 
