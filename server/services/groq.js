@@ -81,29 +81,50 @@ function cleanHtml(raw) {
   return htmlStart > 0 ? stripped.slice(htmlStart) : stripped
 }
 
+// Retry wrapper: retries up to 3 times on 429 with exponential backoff
+async function withRetry(fn, maxRetries = 3) {
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    try {
+      return await fn()
+    } catch (err) {
+      const is429 = err?.status === 429 || err?.message?.includes('429')
+      if (is429 && attempt < maxRetries) {
+        const delay = Math.pow(2, attempt) * 2000 // 2s, 4s, 8s
+        console.log(`Rate limited, retrying in ${delay/1000}s (attempt ${attempt + 1}/${maxRetries})`)
+        await new Promise(r => setTimeout(r, delay))
+        continue
+      }
+      throw err
+    }
+  }
+}
+
 export async function generateGame(prompt, history = [], currentGame = null) {
-  const completion = await getClient().chat.completions.create({
-    model: 'qwen/qwen3-coder:free',
-    max_tokens: 8000,
-    temperature: 0.7,
-    messages: buildMessages(prompt, history, currentGame),
+  const raw = await withRetry(async () => {
+    const completion = await getClient().chat.completions.create({
+      model: 'qwen/qwen3-coder:free',
+      max_tokens: 8000,
+      temperature: 0.7,
+      messages: buildMessages(prompt, history, currentGame),
+    })
+    return completion.choices[0]?.message?.content || ''
   })
-  const raw = completion.choices[0]?.message?.content || ''
   return cleanHtml(raw)
 }
 
 export async function generateTutorial(prompt) {
-  const completion = await getClient().chat.completions.create({
-    model: 'qwen/qwen3-coder:free',
-    max_tokens: 400,
-    temperature: 0.3,
-    messages: [
-      { role: 'system', content: TUTORIAL_PROMPT },
-      { role: 'user', content: `Game: ${prompt}` }
-    ],
+  const raw = await withRetry(async () => {
+    const completion = await getClient().chat.completions.create({
+      model: 'qwen/qwen3-coder:free',
+      max_tokens: 400,
+      temperature: 0.3,
+      messages: [
+        { role: 'system', content: TUTORIAL_PROMPT },
+        { role: 'user', content: `Game: ${prompt}` }
+      ],
+    })
+    return completion.choices[0]?.message?.content || ''
   })
-
-  const raw = completion.choices[0]?.message?.content || ''
   const clean = raw.replace(/^```json\s*/i, '').replace(/^```\s*/i, '').replace(/```\s*$/i, '').trim()
   try { return JSON.parse(clean) } catch { return null }
 }
